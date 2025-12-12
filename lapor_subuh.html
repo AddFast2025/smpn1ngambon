@@ -16,6 +16,8 @@
       font-weight: bold;
       margin-bottom: 16px;
     }
+
+    /* Tombol utama Lapor Subuh */
     #btnSubuh {
       padding: 18px 40px;
       font-size: 20px;
@@ -26,7 +28,25 @@
       background-color: red;
       transition: 0.3s;
     }
+
     #info { margin-top: 16px; font-size: 16px; }
+
+    /* tombol buka laporan (admin) di pojok atas */
+    #btnBuka {
+      
+      padding: 10px 20px;
+      font-size: 12px;
+      border-radius: 10px;
+      border: none;
+      cursor: pointer;
+      background: #444;
+      color: #fff;
+      z-index: 9999;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+display: inline-block;
+width: auto;
+white-space: nowrap;
+    }
 
     #formLapor {
       margin-top: 30px;
@@ -83,6 +103,9 @@
 </head>
 <body>
 
+<!-- Tombol buka laporan (admin) -->
+<button id="btnBuka">Login Guru</button>
+
 <div id="jam">--:--:--</div>
 <button id="btnSubuh">Lapor Subuh</button>
 <div id="info"></div>
@@ -134,6 +157,7 @@
 const API_URL = "https://script.google.com/macros/s/AKfycbz_uVs2rhV0e9omHvbzjJ8glV7NsN0QzRhY5s4YtThqhCVxcGjAHwvzUQQg35iG1BoK6w/exec"; // tetap apabila server dipakai
 
 const btn = document.getElementById("btnSubuh");
+const btnBuka = document.getElementById("btnBuka");
 const info = document.getElementById("info");
 const jamDiv = document.getElementById("jam");
 
@@ -151,6 +175,8 @@ const fotoSukses = document.getElementById("fotoSukses");
 const terimakasih = document.getElementById("terimakasih");
 
 let sudahKirim = false;
+let adminOverride = false; // jika true, laporan aktif walau di luar jam
+const ADMIN_PASSWORD = "123";
 
 function pad(n){ return n.toString().padStart(2,'0'); }
 
@@ -164,10 +190,23 @@ function updateWaktu() {
 
   jamDiv.textContent = `Waktu sekarang: ${pad(jam)}:${pad(menit)}:${pad(detik)}`;
 
-  // Atur rentang aktif (contoh: buka sepanjang hari kecuali bila ingin diubah)
-  const mulai = 20 * 60; // 03:00
-  const selesai = 23 * 60; // 05:00
+  // Atur rentang aktif: 03:00 - 05:00
+  const mulai = 3 * 60; // 03:00
+  const selesai = 5 * 60; // 05:00
   const dalamRentang = (totalMenit >= mulai && totalMenit <= selesai);
+
+  // jika admin override aktif, anggap sedang dibuka
+  if (adminOverride) {
+    if (!sudahKirim) {
+      btn.style.backgroundColor = "green";
+      info.textContent = "✅ Laporan dibuka oleh admin (password diterima)";
+      formLapor.style.display = "block";
+    } else {
+      info.textContent = "✅ Laporan telah terkirim";
+      formLapor.style.display = "none";
+    }
+    return;
+  }
 
   if (dalamRentang) {
     if (sudahKirim) return;
@@ -189,7 +228,7 @@ function isiAbsen() {
 }
 isiAbsen();
 
-// Kompres foto (sama seperti sebelumnya)
+// Kompres foto
 function compressImage(file, targetSizeKB = 30, maxWidth = 800) {
   return new Promise((resolve) => {
     const reader = new FileReader();
@@ -341,10 +380,24 @@ btnKirim.addEventListener('click', function() {
 btn.addEventListener('click', function() {
   // tunjukkan form jika belum terkirim dan saat aktif
   const teks = info.textContent || '';
-  if (teks.includes('sedang dibuka')) {
+  if (teks.includes('sedang dibuka') || teks.includes('dibuka oleh admin')) {
     formLapor.style.display = 'block';
   } else {
-    alert('Lapor Subuh hanya aktif pukul 03.00 - 05.00');
+    alert('Lapor Subuh hanya aktif pukul 03.00 - 05.00 (atau dibuka oleh admin).');
+  }
+});
+
+// Tombol Buka Laporan (admin) -> minta password => jika benar aktifkan override
+btnBuka.addEventListener('click', function() {
+  const p = prompt('Masukkan password untuk membuka laporan:');
+  if (p === null) return; // batal
+  if (p === ADMIN_PASSWORD) {
+    adminOverride = true;
+    sudahKirim = false; // jika ingin membuka ulang, set false
+    updateWaktu();
+    alert('Password benar — laporan dibuka oleh admin.');
+  } else {
+    alert('Password salah.');
   }
 });
 
