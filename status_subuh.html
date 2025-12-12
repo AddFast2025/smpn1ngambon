@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Status Laporan - Tabel</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Roboto, "Segoe UI", Arial; margin: 0; padding: 16px; background: #f6f7fb; color: #111; }
+    .container { max-width: 550px; margin: 0 auto; }
+    h1 { font-size: 20px; margin-bottom: 12px; }
+    .meta { font-size: 13px; color: #555; margin-bottom: 12px; }
+    table { width: 100%; border-collapse: collapse; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.06); border-radius: 10px; overflow: hidden; }
+    thead { background: linear-gradient(90deg,#f2f4f8,#eef2fb); }
+    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #eef0f6; font-size: 14px; }
+    th { font-weight: 600; font-size: 13px; color: #333; }
+    tbody tr:hover { background: #fbfdff; }
+    .status-ok { color: #0b8457; font-weight: 600; }
+    .status-warn { color: #b96b00; font-weight: 600; }
+    .status-empty { color: #888; }
+    .loading, .error { margin: 12px 0; font-size: 14px; }
+    .controls { display:flex; gap:8px; align-items:center; margin-bottom:12px }
+    .search { display:flex; gap:6px; align-items:center }
+    .search input { padding:8px 10px; border-radius:8px; border:1px solid #e6e9f0; min-width:220px }
+    .search button { padding:8px 10px; border-radius:8px; border:1px solid #e6e9f0; background:#fff; cursor:pointer }
+    pre.debug { max-height:120px; overflow:auto; background:#fff; padding:8px; border-radius:6px; border:1px solid #eee; }
+    @media (max-width:600px){ th, td { padding: 8px 6px; font-size: 13px; } .search input { min-width:120px } }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Status Lapor  Subuh </h1>
+   <h2>SMP Negeri 1 Ngambon</h2>
+
+
+    <div class="controls">
+      <div id="message" class="loading">Memuat data...</div>
+
+      <div style="margin-left:auto" class="search">
+        <label for="q" style="font-size:13px;color:#555">Cari:</label>
+        <input id="q" placeholder="ketik nama / kelas / status..." aria-label="Cari" />
+        <button id="clearSearch" title="Bersihkan pencarian">✖</button>
+      </div>
+    </div>
+
+    <div style="overflow:auto">
+      <table id="data-table" aria-live="polite" style="display:none">
+        <thead>
+          <tr>
+            <th>No</th>
+            <th>Kls_Absen</th>
+            <th>Nama Siswa</th>
+            <th>Status Laporan</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+
+    
+  </div>
+
+  <script>
+    // CONFIG: set WEBAPP_URL ke URL webapp mu (dengan /exec)
+    const CONFIG = {
+      WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbz_uVs2rhV0e9omHvbzjJ8glV7NsN0QzRhY5s4YtThqhCVxcGjAHwvzUQQg35iG1BoK6w/exec',
+      SHEET_NAME: 'AMBIL_DATA_SISWA',
+      TOKEN: '' // kalau pakai token, isi di sini
+    };
+
+    function buildUrl() {
+      try {
+        const u = new URL(CONFIG.WEBAPP_URL);
+        u.searchParams.set('action', 'data');
+        u.searchParams.set('sheet', CONFIG.SHEET_NAME);
+        if (CONFIG.TOKEN) u.searchParams.set('token', CONFIG.TOKEN);
+        return u.toString();
+      } catch (e) {
+        return CONFIG.WEBAPP_URL + '?action=data&sheet=' + encodeURIComponent(CONFIG.SHEET_NAME) + (CONFIG.TOKEN ? '&token=' + encodeURIComponent(CONFIG.TOKEN) : '');
+      }
+    }
+
+    function escapeHtml(s) {
+      if (s === null || s === undefined) return '';
+      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    
+
+    // state
+    let allRows = []; // raw rows after parsing
+
+    async function fetchData() {
+      const messageEl = document.getElementById('message');
+      const table = document.getElementById('data-table');
+      const tbody = document.getElementById('tbody');
+
+      messageEl.textContent = 'Memuat data...';
+      table.style.display = 'none';
+      tbody.innerHTML = '';
+
+      const url = buildUrl();
+      console.log('fetch url', url);
+      messageEl.textContent = 'Mengambil data ...';
+
+      try {
+        const res = await fetch(url, { cache: 'no-store' });
+        messageEl.textContent = 'HTTP ' + res.status + ' ' + res.statusText;
+        const text = await res.text();
+
+        // tampilkan potongan debug
+        (text.slice(0, 2000));
+
+        // coba parse JSON
+        let data = null;
+        try {
+          data = JSON.parse(text);
+        } catch (err) {
+          console.warn('not json', err);
+        }
+
+        if (!data) {
+          if (/<html|<head|<body/i.test(text)) {
+            messageEl.innerHTML = 'Gagal memuat data: response berisi HTML (mungkin WebApp tidak dipublikasikan untuk publik atau memerlukan login).';
+          } else if (text.trim().length === 0) {
+            messageEl.textContent = 'Gagal memuat data: respons kosong.';
+          } else {
+            messageEl.textContent = 'Gagal memuat data: response bukan JSON.';
+          }
+          return;
+        }
+
+        // support beberapa struktur: {rows: [...]}, {data: [...]}, atau langsung array
+        let rows = [];
+        if (Array.isArray(data)) rows = data;
+        else if (Array.isArray(data.rows)) rows = data.rows;
+        else if (Array.isArray(data.data)) rows = data.data;
+        else rows = [];
+
+        if (!rows || rows.length === 0) {
+          messageEl.textContent = 'Tidak ada data.';
+          return;
+        }
+
+        // jika baris pertama terlihat seperti header (mengandung huruf), skip
+        let start = 0;
+        const first = rows[0];
+        if (Array.isArray(first) && first.some(c => typeof c === 'string' && /[A-Za-z]/.test(c))) start = 1;
+
+        // Determine indices: if each row has >=8 columns it likely includes cols A.. so E adalah index 4; else E adalah index 0
+        const sampleRow = rows[start] || [];
+        const eIndex = (sampleRow.length >= 8) ? 4 : 0;
+
+        // normalize rows into objects for easier search
+        allRows = [];
+        for (let i = start; i < rows.length; i++) {
+          const r = rows[i] || [];
+          allRows.push({
+            no: r[eIndex] || '',
+            kls: r[eIndex + 1] || '',
+            nama: r[eIndex + 2] || '',
+            status: r[eIndex + 3] || ''
+          });
+        }
+
+        renderTable(allRows);
+        messageEl.textContent = '';
+        table.style.display = '';
+      } catch (err) {
+        console.error(err);
+        messageEl.textContent = 'Gagal memuat data: ' + (err.message || err);
+      }
+    }
+
+    function renderTable(rows) {
+      const tbody = document.getElementById('tbody');
+      tbody.innerHTML = '';
+      if (!rows || rows.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="status-empty">Tidak ada data</td></tr>';
+        return;
+      }
+
+      for (let i = 0; i < rows.length; i++) {
+        const r = rows[i];
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${escapeHtml(r.no)}</td>
+          <td>${escapeHtml(r.kls)}</td>
+          <td>${escapeHtml(r.nama)}</td>
+          <td class="${(String(r.status).toLowerCase().includes('ok')? 'status-ok' : String(r.status).toLowerCase().includes('pending') || String(r.status).toLowerCase().includes('menunggu') ? 'status-warn' : (r.status ? '' : 'status-empty'))}">${escapeHtml(r.status)}</td>
+        `;
+        tbody.appendChild(tr);
+      }
+    }
+
+    // live search (debounced)
+    function debounce(fn, wait) {
+      let t;
+      return function(...args) {
+        clearTimeout(t);
+        t = setTimeout(() => fn.apply(this, args), wait);
+      };
+    }
+
+    function applyFilter(q) {
+      const s = String(q || '').trim().toLowerCase();
+      if (!s) {
+        renderTable(allRows);
+        return;
+      }
+      const filtered = allRows.filter(r => {
+        return (String(r.no) + ' ' + String(r.kls) + ' ' + String(r.nama) + ' ' + String(r.status)).toLowerCase().includes(s);
+      });
+      renderTable(filtered);
+    }
+
+    const debouncedFilter = debounce(e => applyFilter(e.target.value), 250);
+
+    document.getElementById('q').addEventListener('input', debouncedFilter);
+    document.getElementById('clearSearch').addEventListener('click', () => {
+      const q = document.getElementById('q');
+      q.value = '';
+      applyFilter('');
+      q.focus();
+    });
+
+    // load awal
+    fetchData();
+
+    // optional: expose a function for manual refresh from console (fetchData())
+    window.refreshLaporan = fetchData;
+  </script>
+</body>
+</html>
