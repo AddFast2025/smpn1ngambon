@@ -135,7 +135,8 @@ white-space: nowrap;
     <option value="">Nomor Absen</option>
   </select>
 
-  <input type="text" id="nama" placeholder="Tulis nama lengkap" style="display:none;">
+<input type="text" id="nama" placeholder="Nama otomatis" readonly style="display:none;">
+
 
   <input type="file" id="foto" accept="image/*" style="display:none;">
   <img id="preview">
@@ -146,6 +147,7 @@ white-space: nowrap;
 <!-- HASIL -->
 <img id="fotoSukses">
 <div id="terimakasih"></div>
+<script src="data_siswa.js"></script>
 
 <script>
 // ----- Konfigurasi -----
@@ -215,13 +217,22 @@ function updateWaktu() {
   }
 }
 
-// Isi opsi absen 1..50
-function isiAbsen() {
+function isiAbsenDariData() {
+  const kelas = selectKelas.value;
+  const rombel = selectRombel.value;
+
+  const data = dataSiswa.filter(s =>
+    s.kelas === kelas && s.rombel === rombel
+  );
+
   let html = '<option value="">Nomor Absen</option>';
-  for (let i=1;i<=50;i++) html += `<option value="${i}">${i}</option>`;
+  data.forEach(s => {
+    html += `<option value="${s.absen}">${s.absen}</option>`;
+  });
+
   selectAbsen.innerHTML = html;
 }
-isiAbsen();
+
 
 // Kompres foto
 function compressImage(file, targetSizeKB = 30, maxWidth = 800) {
@@ -286,18 +297,26 @@ selectRombel.addEventListener('change', function() {
     preview.style.display = 'none';
     return;
   }
+
+  isiAbsenDariData();
   selectAbsen.style.display = 'block';
 });
+
 
 // Event: pilih absen → tampilkan nama input
 selectAbsen.addEventListener('change', function() {
   if (!this.value) {
     inputNama.style.display = 'none';
-    inputFoto.style.display = 'none';
-    btnKirim.style.display = 'none';
-    preview.style.display = 'none';
     return;
   }
+
+  const siswa = dataSiswa.find(s =>
+    s.kelas === selectKelas.value &&
+    s.rombel === selectRombel.value &&
+    s.absen === this.value
+  );
+
+  inputNama.value = siswa ? siswa.nama : '';
   inputNama.style.display = 'block';
   inputFoto.style.display = 'block';
   btnKirim.style.display = 'block';
