@@ -4,21 +4,23 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>SMP Negeri 1 Ngambon</title>
+
   <style>
     .btn-kanan-atas {
       position: fixed;
       top: 10px;
       right: 10px;
+      z-index: 100;
     }
+
     .btn-kanan-atas a {
-      border: none;
       padding: 6px 12px;
       background: #3498db;
       color: white;
       border-radius: 10px;
-      cursor: pointer;
       text-decoration: none;
       font-weight: 600;
+      cursor: pointer;
     }
 
     body {
@@ -35,15 +37,14 @@
       background: linear-gradient(160deg, #e0f7fa, #b3e5fc, #81d4fa);
     }
 
-header img {
-  width: 160px;
-  height: 160px;
-  object-fit: contain;
-  margin-bottom: 16px;
-  border-radius: 24px;
-  background: linear-gradient(160deg, #e0f7fa, #b3e5fc, #81d4fa);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-}
+    header img {
+      width: 160px;
+      height: 160px;
+      object-fit: contain;
+      margin-bottom: 16px;
+      border-radius: 24px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
 
     h1 {
       font-size: clamp(20px, 5vw, 30px);
@@ -60,7 +61,6 @@ header img {
     }
 
     .menu a {
-      display: block;
       padding: 14px;
       border-radius: 12px;
       text-decoration: none;
@@ -79,37 +79,60 @@ header img {
     .menu a:active {
       transform: scale(0.98);
     }
+
+    /* Tombol khusus KS (awal disembunyikan) */
+    .khusus-ks {
+      display: none;
+    }
   </style>
 </head>
+
 <body>
 
-  <!-- Tombol Login KS (dengan password) -->
+  <!-- Login KS -->
   <div class="btn-kanan-atas">
     <a href="#" onclick="loginKS()">Login KS</a>
   </div>
 
   <h2>PORTAL SUBUH</h2>
-  <h1>SMP NEGERI 1 NGAMBON </h1>
+  <h1>SMP NEGERI 1 NGAMBON</h1>
 
   <header>
     <img src="logo1.jpg" alt="Logo Sekolah">
   </header>
 
   <nav class="menu">
+    <!-- Selalu tampil -->
     <a href="lapor_subuh.html">📑 Lapor Subuh</a>
-    <a href="status_subuh.html">📑 Status Laporan</a>
+
+    <!-- Khusus setelah Login KS -->
+    <a href="status_subuh.html" class="khusus-ks">📑 Status Laporan</a>
+    <a href="rekap_bulanan.html" class="khusus-ks">📑 Rekap Bulanan</a>
   </nav>
 
 <script>
-function loginKS() {
-  const pwd = prompt("Masukkan password:");
-
-  if (pwd === "123") {
-    window.location.href = "halaman_ks.html";
-  } else {
-    alert("Password salah!");
+  // cek status login saat halaman dibuka
+  if (sessionStorage.getItem("loginKS") === "true") {
+    tampilkanMenuKS();
   }
-}
+
+  function loginKS() {
+    const pwd = prompt("Masukkan password KS:");
+
+    if (pwd === "123") {
+      sessionStorage.setItem("loginKS", "true");
+      tampilkanMenuKS();
+      alert("Login KS berhasil");
+    } else {
+      alert("Password salah!");
+    }
+  }
+
+  function tampilkanMenuKS() {
+    document.querySelectorAll(".khusus-ks").forEach(el => {
+      el.style.display = "block";
+    });
+  }
 </script>
 
 </body>
