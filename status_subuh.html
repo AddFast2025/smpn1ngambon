@@ -1,233 +1,235 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Status Laporan - Tabel</title>
-  <style>
-    body { font-family: system-ui, -apple-system, Roboto, "Segoe UI", Arial; margin: 0; padding: 16px; background: #f6f7fb; color: #111; }
-    .container { max-width: 550px; margin: 0 auto; }
-    h1 { font-size: 20px; margin-bottom: 12px; }
-    .meta { font-size: 13px; color: #555; margin-bottom: 12px; }
-    table { width: 100%; border-collapse: collapse; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.06); border-radius: 10px; overflow: hidden; }
-    thead { background: linear-gradient(90deg,#f2f4f8,#eef2fb); }
-    th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #eef0f6; font-size: 14px; }
-    th { font-weight: 600; font-size: 13px; color: #333; }
-    tbody tr:hover { background: #fbfdff; }
-    .status-ok { color: #0b8457; font-weight: 600; }
-    .status-warn { color: #b96b00; font-weight: 600; }
-    .status-empty { color: #888; }
-    .loading, .error { margin: 12px 0; font-size: 14px; }
-    .controls { display:flex; gap:8px; align-items:center; margin-bottom:12px }
-    .search { display:flex; gap:6px; align-items:center }
-    .search input { padding:8px 10px; border-radius:8px; border:1px solid #e6e9f0; min-width:220px }
-    .search button { padding:8px 10px; border-radius:8px; border:1px solid #e6e9f0; background:#fff; cursor:pointer }
-    pre.debug { max-height:120px; overflow:auto; background:#fff; padding:8px; border-radius:6px; border:1px solid #eee; }
-    @media (max-width:600px){ th, td { padding: 8px 6px; font-size: 13px; } .search input { min-width:120px } }
-  </style>
+<meta charset="UTF-8">
+<title>Rekap Lapor Subuh Harian</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+body { font-family: Arial; background:#f4f6f8; padding:20px; }
+.card { max-width:1000px; margin:auto; background:#fff; padding:20px; border-radius:8px; }
+
+label { font-weight:bold; margin-top:10px; display:block; }
+select, input[type="date"] { width:100%; padding:8px; margin-top:5px; }
+
+table {
+  width:100%;
+  border-collapse:collapse;
+  margin-top:15px;
+}
+th,td {
+  border:1px solid #ddd;
+  padding:8px;
+  text-align:center;
+}
+th { background:#2e7d32; color:#fff; }
+
+.belum {
+  background:#ffebee;
+  color:#c62828;
+  font-weight:bold;
+}
+
+.loading {
+  text-align:center;
+  margin-top:15px;
+  font-weight:bold;
+}
+
+.rekap {
+  margin-top:15px;
+  padding:10px;
+  background:#e8f5e9;
+  font-weight:bold;
+}
+</style>
 </head>
+
 <body>
-  <div class="container">
-    <h1>Status Lapor  Subuh </h1>
-   <h2>SMP Negeri 1 Ngambon</h2>
 
+<div class="card">
+<h2 align="center">📋 Rekap Lapor Subuh Harian</h2>
 
-    <div class="controls">
-      <div id="message" class="loading">Memuat data...</div>
+<label>Tanggal</label>
+<input type="date" id="tanggal">
 
-      <div style="margin-left:auto" class="search">
-        <label for="q" style="font-size:13px;color:#555">Cari:</label>
-        <input id="q" placeholder="ketik nama / kelas / status..." aria-label="Cari" />
-        <button id="clearSearch" title="Bersihkan pencarian">✖</button>
-      </div>
-    </div>
+<label>Lembaga</label>
+<select id="lembaga"><option value="">Pilih Lembaga</option></select>
 
-    <div style="overflow:auto">
-      <table id="data-table" aria-live="polite" style="display:none">
-        <thead>
-          <tr>
-            <th>No</th>
-            <th>Kls_Absen</th>
-            <th>Nama Siswa</th>
-            <th>Status Laporan</th>
-          </tr>
-        </thead>
-        <tbody id="tbody"></tbody>
-      </table>
-    </div>
+<label>Kelas</label>
+<select id="kelas"><option value="">Pilih Kelas</option></select>
 
-    
-  </div>
+<label>Rombel</label>
+<select id="rombel"><option value="">Pilih Rombel</option></select>
 
-  <script>
-    // CONFIG: set WEBAPP_URL ke URL webapp mu (dengan /exec)
-    const CONFIG = {
-      WEBAPP_URL: 'https://script.google.com/macros/s/AKfycbz_uVs2rhV0e9omHvbzjJ8glV7NsN0QzRhY5s4YtThqhCVxcGjAHwvzUQQg35iG1BoK6w/exec',
-      SHEET_NAME: 'AMBIL_DATA_SISWA',
-      TOKEN: '' // kalau pakai token, isi di sini
-    };
+<div class="loading" id="loading">Pilih filter...</div>
 
-    function buildUrl() {
-      try {
-        const u = new URL(CONFIG.WEBAPP_URL);
-        u.searchParams.set('action', 'data');
-        u.searchParams.set('sheet', CONFIG.SHEET_NAME);
-        if (CONFIG.TOKEN) u.searchParams.set('token', CONFIG.TOKEN);
-        return u.toString();
-      } catch (e) {
-        return CONFIG.WEBAPP_URL + '?action=data&sheet=' + encodeURIComponent(CONFIG.SHEET_NAME) + (CONFIG.TOKEN ? '&token=' + encodeURIComponent(CONFIG.TOKEN) : '');
-      }
-    }
+<table id="tabel" style="display:none">
+<thead>
+<tr>
+  <th>No</th>
+  <th>Nama Siswa</th>
+  <th>Jam</th>
+  <th>Nilai</th>
+  <th>Status</th>
+</tr>
+</thead>
+<tbody id="tbody"></tbody>
+</table>
 
-    function escapeHtml(s) {
-      if (s === null || s === undefined) return '';
-      return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    }
+<div class="rekap" id="rekap" style="display:none"></div>
+</div>
 
-    
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getFirestore, collection, getDocs, query, where }
+from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // state
-    let allRows = []; // raw rows after parsing
+/* FIREBASE */
+const firebaseConfig = {
+  apiKey: "AIzaSyD8SIXXPm_c-TJiaRjHbrishFtU2NICm9M",
+  authDomain: "datasiswa-c10f4.firebaseapp.com",
+  projectId: "datasiswa-c10f4"
+};
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-    async function fetchData() {
-      const messageEl = document.getElementById('message');
-      const table = document.getElementById('data-table');
-      const tbody = document.getElementById('tbody');
+/* ELEMENT */
+const tanggalEl = document.getElementById("tanggal");
+const lembagaEl = document.getElementById("lembaga");
+const kelasEl = document.getElementById("kelas");
+const rombelEl = document.getElementById("rombel");
+const tbody = document.getElementById("tbody");
+const tabel = document.getElementById("tabel");
+const loading = document.getElementById("loading");
+const rekap = document.getElementById("rekap");
 
-      messageEl.textContent = 'Memuat data...';
-      table.style.display = 'none';
-      tbody.innerHTML = '';
+/* DEFAULT TANGGAL */
+tanggalEl.value = new Date().toISOString().split("T")[0];
 
-      const url = buildUrl();
-      console.log('fetch url', url);
-      messageEl.textContent = 'Mengambil data ...';
+/* =====================
+   LOAD LEMBAGA (A-Z)
+===================== */
+async function loadLembaga() {
+  const snap = await getDocs(collection(db,"lembaga"));
+  const data = [];
+  snap.forEach(d => data.push({ id:d.id, ...d.data() }));
 
-      try {
-        const res = await fetch(url, { cache: 'no-store' });
-        messageEl.textContent = 'HTTP ' + res.status + ' ' + res.statusText;
-        const text = await res.text();
+  data.sort((a,b)=>a.nama.localeCompare(b.nama,"id"));
 
-        // tampilkan potongan debug
-        (text.slice(0, 2000));
+  data.forEach(d=>{
+    lembagaEl.innerHTML += `<option value="${d.id}">${d.nama}</option>`;
+  });
+}
+loadLembaga();
 
-        // coba parse JSON
-        let data = null;
-        try {
-          data = JSON.parse(text);
-        } catch (err) {
-          console.warn('not json', err);
-        }
+/* =====================
+   LOAD KELAS (1,2,3,10)
+===================== */
+lembagaEl.onchange = async () => {
+  kelasEl.innerHTML = `<option value="">Pilih Kelas</option>`;
+  rombelEl.innerHTML = `<option value="">Pilih Rombel</option>`;
+  reset();
 
-        if (!data) {
-          if (/<html|<head|<body/i.test(text)) {
-            messageEl.innerHTML = 'Gagal memuat data: response berisi HTML (mungkin WebApp tidak dipublikasikan untuk publik atau memerlukan login).';
-          } else if (text.trim().length === 0) {
-            messageEl.textContent = 'Gagal memuat data: respons kosong.';
-          } else {
-            messageEl.textContent = 'Gagal memuat data: response bukan JSON.';
-          }
-          return;
-        }
+  if(!lembagaEl.value) return;
 
-        // support beberapa struktur: {rows: [...]}, {data: [...]}, atau langsung array
-        let rows = [];
-        if (Array.isArray(data)) rows = data;
-        else if (Array.isArray(data.rows)) rows = data.rows;
-        else if (Array.isArray(data.data)) rows = data.data;
-        else rows = [];
+  const snap = await getDocs(
+    query(collection(db,"kelas"), where("lembagaId","==",lembagaEl.value))
+  );
 
-        if (!rows || rows.length === 0) {
-          messageEl.textContent = 'Tidak ada data.';
-          return;
-        }
+  const data=[];
+  snap.forEach(d=>data.push({id:d.id,...d.data()}));
 
-        // jika baris pertama terlihat seperti header (mengandung huruf), skip
-        let start = 0;
-        const first = rows[0];
-        if (Array.isArray(first) && first.some(c => typeof c === 'string' && /[A-Za-z]/.test(c))) start = 1;
+  data.sort((a,b)=>a.nama.localeCompare(b.nama,"id",{numeric:true}));
 
-        // Determine indices: if each row has >=8 columns it likely includes cols A.. so E adalah index 4; else E adalah index 0
-        const sampleRow = rows[start] || [];
-        const eIndex = (sampleRow.length >= 8) ? 4 : 0;
+  data.forEach(d=>{
+    kelasEl.innerHTML += `<option value="${d.id}">${d.nama}</option>`;
+  });
+};
 
-        // normalize rows into objects for easier search
-        allRows = [];
-        for (let i = start; i < rows.length; i++) {
-          const r = rows[i] || [];
-          allRows.push({
-            no: r[eIndex] || '',
-            kls: r[eIndex + 1] || '',
-            nama: r[eIndex + 2] || '',
-            status: r[eIndex + 3] || ''
-          });
-        }
+/* =====================
+   LOAD ROMBEL (A-Z)
+===================== */
+kelasEl.onchange = async () => {
+  rombelEl.innerHTML = `<option value="">Pilih Rombel</option>`;
+  reset();
 
-        renderTable(allRows);
-        messageEl.textContent = '';
-        table.style.display = '';
-      } catch (err) {
-        console.error(err);
-        messageEl.textContent = 'Gagal memuat data: ' + (err.message || err);
-      }
-    }
+  if(!kelasEl.value) return;
 
-    function renderTable(rows) {
-      const tbody = document.getElementById('tbody');
-      tbody.innerHTML = '';
-      if (!rows || rows.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="4" class="status-empty">Tidak ada data</td></tr>';
-        return;
-      }
+  const snap = await getDocs(
+    query(collection(db,"rombel"), where("kelasId","==",kelasEl.value))
+  );
 
-      for (let i = 0; i < rows.length; i++) {
-        const r = rows[i];
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td>${escapeHtml(r.no)}</td>
-          <td>${escapeHtml(r.kls)}</td>
-          <td>${escapeHtml(r.nama)}</td>
-          <td class="${(String(r.status).toLowerCase().includes('ok')? 'status-ok' : String(r.status).toLowerCase().includes('pending') || String(r.status).toLowerCase().includes('menunggu') ? 'status-warn' : (r.status ? '' : 'status-empty'))}">${escapeHtml(r.status)}</td>
-        `;
-        tbody.appendChild(tr);
-      }
-    }
+  const data=[];
+  snap.forEach(d=>data.push({id:d.id,...d.data()}));
 
-    // live search (debounced)
-    function debounce(fn, wait) {
-      let t;
-      return function(...args) {
-        clearTimeout(t);
-        t = setTimeout(() => fn.apply(this, args), wait);
-      };
-    }
+  data.sort((a,b)=>a.nama.localeCompare(b.nama,"id"));
 
-    function applyFilter(q) {
-      const s = String(q || '').trim().toLowerCase();
-      if (!s) {
-        renderTable(allRows);
-        return;
-      }
-      const filtered = allRows.filter(r => {
-        return (String(r.no) + ' ' + String(r.kls) + ' ' + String(r.nama) + ' ' + String(r.status)).toLowerCase().includes(s);
-      });
-      renderTable(filtered);
-    }
+  data.forEach(d=>{
+    rombelEl.innerHTML += `<option value="${d.id}">${d.nama}</option>`;
+  });
+};
 
-    const debouncedFilter = debounce(e => applyFilter(e.target.value), 250);
+rombelEl.onchange = loadRekap;
+tanggalEl.onchange = loadRekap;
 
-    document.getElementById('q').addEventListener('input', debouncedFilter);
-    document.getElementById('clearSearch').addEventListener('click', () => {
-      const q = document.getElementById('q');
-      q.value = '';
-      applyFilter('');
-      q.focus();
-    });
+/* =====================
+   LOAD REKAP HARIAN
+===================== */
+async function loadRekap(){
+  if(!rombelEl.value || !tanggalEl.value) return;
 
-    // load awal
-    fetchData();
+  reset();
+  loading.style.display="block";
+  loading.innerText="Memuat data...";
 
-    // optional: expose a function for manual refresh from console (fetchData())
-    window.refreshLaporan = fetchData;
-  </script>
+  const siswaSnap = await getDocs(
+    query(collection(db,"siswa"), where("rombelId","==",rombelEl.value))
+  );
+
+  const laporSnap = await getDocs(
+    query(collection(db,"lapor_subuh"), where("tanggal","==",tanggalEl.value))
+  );
+
+  const laporan={};
+  laporSnap.forEach(d=>laporan[d.data().siswaId]=d.data());
+
+  const siswa=[];
+  siswaSnap.forEach(s=>siswa.push({id:s.id,...s.data()}));
+
+  siswa.sort((a,b)=>a.nama.localeCompare(b.nama,"id"));
+
+  let no=1, hadir=0;
+
+  siswa.forEach(s=>{
+    const r=laporan[s.id];
+    if(r) hadir++;
+
+    tbody.innerHTML+=`
+      <tr class="${r?"":"belum"}">
+        <td>${no++}</td>
+        <td>${s.nama}</td>
+        <td>${r?r.jam:"-"}</td>
+        <td>${r?r.nilai:0}</td>
+        <td>${r?"✅ Lapor":"❌ Belum"}</td>
+      </tr>
+    `;
+  });
+
+  rekap.innerHTML=`Hadir: ${hadir} / ${siswa.length} siswa (${((hadir/siswa.length)*100).toFixed(1)}%)`;
+
+  loading.style.display="none";
+  tabel.style.display="table";
+  rekap.style.display="block";
+}
+
+function reset(){
+  tbody.innerHTML="";
+  tabel.style.display="none";
+  rekap.style.display="none";
+  loading.style.display="none";
+}
+</script>
+
 </body>
 </html>
