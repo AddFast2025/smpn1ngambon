@@ -160,6 +160,48 @@ rombelEl.onchange = async ()=>{
   data.forEach(s=>siswaEl.innerHTML+=`<option value="${s.id}">${s.nama}</option>`);
 };
 
+const fotoInput = document.getElementById("foto");
+const preview = document.getElementById("previewFoto");
+
+fotoInput.addEventListener("change", () => {
+  const file = fotoInput.files[0];
+  if (!file) return;
+
+  // Hanya gambar
+  if (!file.type.startsWith("image/")) {
+    alert("File harus berupa gambar");
+    fotoInput.value = "";
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      // ukuran maksimum (px)
+      const MAX_WIDTH = 200;
+      const scale = Math.min(1, MAX_WIDTH / img.width);
+
+      const canvas = document.createElement("canvas");
+      canvas.width = img.width * scale;
+      canvas.height = img.height * scale;
+
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      // kompres (0.6 = cukup tajam tapi kecil)
+      const compressedData = canvas.toDataURL("image/jpeg", 0.6);
+
+      // tampilkan di web lokal
+      preview.src = compressedData;
+      preview.style.display = "block";
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+
 siswaEl.onchange = loadHistory;
 
 async function loadHistory(){
