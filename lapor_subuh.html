@@ -6,106 +6,33 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
 <style>
-body {
-  font-family: Arial;
-  background:#f4f6f8;
-  padding:20px;
-}
-
-/* CARD */
-.card {
-  max-width:650px;
-  margin:auto;
-  background:#fff;
-  padding:20px;
-  border-radius:8px;
-}
-
-/* FORM */
+body { font-family: Arial; background:#f4f6f8; padding:20px; }
+.card { max-width:650px; margin:auto; background:#fff; padding:20px; border-radius:8px; }
 label { font-weight:bold; display:block; margin-top:10px; }
-select,input,button {
-  width:100%;
-  padding:8px;
-  margin-top:5px;
-}
-button {
-  background:#2e7d32;
-  color:white;
-  border:none;
-  margin-top:15px;
-  cursor:pointer;
-}
+select,input,button { width:100%; padding:8px; margin-top:5px; }
+button { background:#2e7d32; color:white; border:none; margin-top:15px; cursor:pointer; }
 button:disabled { background:#9e9e9e; }
-
-/* INFO */
-.notice {
-  background:#fff3cd;
-  color:#856404;
-  padding:8px;
-  border-radius:4px;
-  margin-top:10px;
-  display:none;
-}
+.notice { background:#fff3cd; color:#856404; padding:8px; border-radius:4px; margin-top:10px; display:none; }
 .error { color:#c62828; margin-top:10px; }
-
 ul { padding-left:18px; }
 hr { margin:20px 0; }
-
-/* ===== LOGIN BUTTON ===== */
-.login-btn {
-  position: static;
-  font-size: 12px;
-  padding: 5px 12px;
-}
-
-/* ===== MODAL LOGIN ===== */
-.modal {
-  display: none;
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.4);
-  z-index: 2000;
-}
-.modal-box {
-  background: #fff;
-  width: 280px;
-  padding: 15px;
-  border-radius: 8px;
-  margin: 120px auto;
-  text-align: center;
-}
-.modal-box input {
-  width: 100%;
-  padding: 8px;
-  margin: 10px 0;
-}
-.modal-btn {
-  display: flex;
-  gap: 8px;
-}
-.modal-btn button {
-  flex: 1;
-  padding: 6px;
-  border: none;
-  cursor: pointer;
-}
-.modal-btn .batal {
-  background: #e0e0e0;
-  color:#000;
-}
+.login-btn { font-size:12px; padding:5px 12px; }
+.modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.4); z-index:2000; }
+.modal-box { background:#fff; width:280px; padding:15px; border-radius:8px; margin:120px auto; text-align:center; }
+.modal-box input { width:100%; padding:8px; margin:10px 0; }
+.modal-btn { display:flex; gap:8px; }
+.modal-btn button { flex:1; padding:6px; border:none; cursor:pointer; }
+.modal-btn .batal { background:#e0e0e0; color:#000; }
 </style>
 </head>
-
 <body>
 
-<!-- TOMBOL LOGIN -->
 <button class="login-btn" onclick="openLogin()">🔐 Admin</button>
 
-<!-- MODAL LOGIN -->
 <div id="loginModal" class="modal">
   <div class="modal-box">
     <h3>Admin</h3>
-    <input type="password" id="pwdGuru" placeholder="Admin">
+    <input type="password" id="pwdGuru" placeholder="Password">
     <div class="modal-btn">
       <button onclick="loginGuru()">Login</button>
       <button class="batal" onclick="closeLogin()">Batal</button>
@@ -143,8 +70,7 @@ hr { margin:20px 0; }
 
 <label>Foto (opsional)</label>
 <input type="file" id="foto" accept="image/*">
-<img id="previewFoto"
-     style="display:none; margin:12px auto; max-width:90%; border-radius:8px;">
+<img id="previewFoto" style="display:none; margin:12px auto; max-width:90%; border-radius:8px;">
 
 <button onclick="kirim()">Kirim Laporan</button>
 
@@ -158,247 +84,125 @@ hr { margin:20px 0; }
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import {
-  getFirestore, collection, addDoc, getDocs,
-  query, where
-} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, query, where, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-/* FIREBASE */
 const firebaseConfig = {
   apiKey: "AIzaSyD8SIXXPm_c-TJiaRjHbrishFtU2NICm9M",
   authDomain: "datasiswa-c10f4.firebaseapp.com",
   projectId: "datasiswa-c10f4"
 };
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-/* ELEMENT */
 const lembagaEl = document.getElementById("lembaga");
-const kelasEl   = document.getElementById("kelas");
-const rombelEl  = document.getElementById("rombel");
-const siswaEl   = document.getElementById("siswa");
+const kelasEl = document.getElementById("kelas");
+const rombelEl = document.getElementById("rombel");
+const siswaEl = document.getElementById("siswa");
 const tanggalEl = document.getElementById("tanggal");
-const jamEl     = document.getElementById("jam");
-const noticeEl  = document.getElementById("notice");
-const errorEl   = document.getElementById("error");
+const jamEl = document.getElementById("jam");
+const noticeEl = document.getElementById("notice");
+const errorEl = document.getElementById("error");
 const historyEl = document.getElementById("history");
-const totalEl   = document.getElementById("total");
+const totalEl = document.getElementById("total");
 
-/* TANGGAL & JAM OTOMATIS */
+function selectedText(el){
+  return el.options[el.selectedIndex]?.text || "";
+}
+
 const now = new Date();
 tanggalEl.value = now.toISOString().split("T")[0];
 jamEl.value = now.toTimeString().slice(0,5);
 
-/* ===== LOGIN ===== */
-window.openLogin = () => {
-  document.getElementById("loginModal").style.display = "block";
-};
-window.closeLogin = () => {
-  document.getElementById("loginModal").style.display = "none";
-  document.getElementById("pwdGuru").value = "";
-  document.getElementById("loginStatus").innerText = "";
-};
-window.loginGuru = () => {
-  const pwd = document.getElementById("pwdGuru").value;
-  const status = document.getElementById("loginStatus");
-
-  if (pwd === "12345") {
-    tanggalEl.readOnly = false;
-    jamEl.readOnly = false;
-    status.innerText = "✔️ Login berhasil";
-    status.style.color = "green";
-    setTimeout(closeLogin, 800);
-  } else {
-    status.innerText = "❌ Password salah";
-    status.style.color = "red";
-  }
+window.openLogin = ()=> document.getElementById("loginModal").style.display="block";
+window.closeLogin = ()=>{ document.getElementById("loginModal").style.display="none"; document.getElementById("pwdGuru").value=""; document.getElementById("loginStatus").innerText=""; };
+window.loginGuru = ()=>{
+  if(document.getElementById("pwdGuru").value==="12345"){
+    tanggalEl.readOnly=false; jamEl.readOnly=false;
+    document.getElementById("loginStatus").innerText="✔ Login berhasil";
+    setTimeout(closeLogin,700);
+  } else document.getElementById("loginStatus").innerText="❌ Password salah";
 };
 
-/* RESET */
-function reset() {
-  historyEl.innerHTML = "Pilih siswa";
-  totalEl.innerText = "0";
-}
-
-/* LOAD LEMBAGA */
-async function loadLembaga() {
-  lembagaEl.innerHTML = "<option value=''>Pilih</option>";
+async function loadLembaga(){
+  lembagaEl.innerHTML="<option value=''>Pilih</option>";
   const snap = await getDocs(collection(db,"lembaga"));
-  let data = [];
-  snap.forEach(d => data.push({id:d.id, nama:d.data().nama}));
+  let data=[]; snap.forEach(d=>data.push({id:d.id,nama:d.data().nama}));
   data.sort((a,b)=>a.nama.localeCompare(b.nama,'id'));
-  data.forEach(d=>{
-    lembagaEl.innerHTML += `<option value="${d.id}">${d.nama}</option>`;
-  });
+  data.forEach(d=>lembagaEl.innerHTML+=`<option value="${d.id}">${d.nama}</option>`);
 }
 loadLembaga();
 
-/* LOAD KELAS */
-lembagaEl.onchange = async () => {
-  kelasEl.innerHTML = "<option value=''>Pilih</option>";
-  rombelEl.innerHTML = "<option value=''>Pilih</option>";
-  siswaEl.innerHTML = "<option value=''>Pilih</option>";
-  reset();
-
-  const snap = await getDocs(
-    query(collection(db,"kelas"), where("lembagaId","==",lembagaEl.value))
-  );
-  let data=[];
-  snap.forEach(d=>data.push({id:d.id,nama:d.data().nama}));
+lembagaEl.onchange = async ()=>{
+  kelasEl.innerHTML="<option value=''>Pilih</option>";
+  rombelEl.innerHTML="<option value=''>Pilih</option>";
+  siswaEl.innerHTML="<option value=''>Pilih</option>";
+  const snap = await getDocs(query(collection(db,"kelas"), where("lembagaId","==",lembagaEl.value)));
+  let data=[]; snap.forEach(d=>data.push({id:d.id,nama:d.data().nama}));
   data.sort((a,b)=>a.nama.localeCompare(b.nama,'id',{numeric:true}));
-  data.forEach(k=>{
-    kelasEl.innerHTML+=`<option value="${k.id}">${k.nama}</option>`;
-  });
+  data.forEach(k=>kelasEl.innerHTML+=`<option value="${k.id}">${k.nama}</option>`);
 };
 
-/* LOAD ROMBEL */
-kelasEl.onchange = async () => {
-  rombelEl.innerHTML = "<option value=''>Pilih</option>";
-  siswaEl.innerHTML = "<option value=''>Pilih</option>";
-  reset();
-
-  const snap = await getDocs(
-    query(collection(db,"rombel"), where("kelasId","==",kelasEl.value))
-  );
-  let data=[];
-  snap.forEach(d=>data.push({id:d.id,nama:d.data().nama}));
+kelasEl.onchange = async ()=>{
+  rombelEl.innerHTML="<option value=''>Pilih</option>";
+  siswaEl.innerHTML="<option value=''>Pilih</option>";
+  const snap = await getDocs(query(collection(db,"rombel"), where("kelasId","==",kelasEl.value)));
+  let data=[]; snap.forEach(d=>data.push({id:d.id,nama:d.data().nama}));
   data.sort((a,b)=>a.nama.localeCompare(b.nama,'id',{numeric:true}));
-  data.forEach(r=>{
-    rombelEl.innerHTML+=`<option value="${r.id}">${r.nama}</option>`;
-  });
+  data.forEach(r=>rombelEl.innerHTML+=`<option value="${r.id}">${r.nama}</option>`);
 };
 
-/* LOAD SISWA */
-rombelEl.onchange = async () => {
-  siswaEl.innerHTML = "<option value=''>Pilih</option>";
-  reset();
-
-  const snap = await getDocs(
-    query(collection(db,"siswa"), where("rombelId","==",rombelEl.value))
-  );
-  let data=[];
-  snap.forEach(d=>data.push({id:d.id,nama:d.data().nama}));
+rombelEl.onchange = async ()=>{
+  siswaEl.innerHTML="<option value=''>Pilih</option>";
+  const snap = await getDocs(query(collection(db,"siswa"), where("rombelId","==",rombelEl.value)));
+  let data=[]; snap.forEach(d=>data.push({id:d.id,nama:d.data().nama}));
   data.sort((a,b)=>a.nama.localeCompare(b.nama,'id'));
-  data.forEach(s=>{
-    siswaEl.innerHTML+=`<option value="${s.id}">${s.nama}</option>`;
-  });
+  data.forEach(s=>siswaEl.innerHTML+=`<option value="${s.id}">${s.nama}</option>`);
 };
 
 siswaEl.onchange = loadHistory;
-/* FOTO KOMPRES LOKAL (TIDAK DISIMPAN) */
-const fotoInput = document.getElementById("foto");
-const previewFoto = document.getElementById("previewFoto");
 
-fotoInput.onchange = () => {
-  const file = fotoInput.files[0];
-  if (!file) return;
-
-  // Baca file
-  const reader = new FileReader();
-  reader.onload = e => {
-    const img = new Image();
-    img.onload = () => {
-      const maxWidth = 200; // 🔧 UBAH JIKA MAU
-      const scale = Math.min(1, maxWidth / img.width);
-
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width * scale;
-      canvas.height = img.height * scale;
-
-      const ctx = canvas.getContext("2d");
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-      // 🔽 KOMPRES JADI JPEG
-      const compressed = canvas.toDataURL("image/jpeg", 0.6);
-
-      // TAMPILKAN PREVIEW
-      previewFoto.src = compressed;
-      previewFoto.style.display = "block";
-
-      // ❌ TIDAK DISIMPAN KE FIREBASE
-      // hanya ada di browser
-    };
-    img.src = e.target.result;
-  };
-  reader.readAsDataURL(file);
-};
-
-/* RIWAYAT */
-async function loadHistory() {
-  historyEl.innerHTML="Memuat...";
-  totalEl.innerText="0";
-
-  const snap = await getDocs(
-    query(collection(db,"lapor_subuh"), where("siswaId","==",siswaEl.value))
-  );
-
-  let data=[];
-  snap.forEach(d=>data.push(d.data()));
-
-  data.sort((a,b)=>{
-    if(a.tanggal===b.tanggal){
-      return b.jam.localeCompare(a.jam);
-    }
-    return b.tanggal.localeCompare(a.tanggal);
-  });
-
-  let total=0;
-  let html="<ul>";
-  data.forEach(r=>{
-    html+=`<li>${r.tanggal} ${r.jam} → ${r.nilai}</li>`;
-    total+=r.nilai;
-  });
+async function loadHistory(){
+  historyEl.innerHTML="Memuat..."; totalEl.innerText="0";
+  const snap = await getDocs(query(collection(db,"lapor_subuh"), where("siswaId","==",siswaEl.value)));
+  let data=[]; snap.forEach(d=>data.push(d.data()));
+  data.sort((a,b)=>b.tanggal.localeCompare(a.tanggal));
+  let total=0, html="<ul>";
+  data.forEach(r=>{ html+=`<li>${r.tanggal} ${r.jam} → ${r.nilai}</li>`; total+=r.nilai; });
   html+="</ul>";
-
   historyEl.innerHTML=data.length?html:"Belum ada laporan";
   totalEl.innerText=total;
 }
 
-/* VALIDASI SUBUH */
-function validSubuh(){
-  return jamEl.value>="03:00" && jamEl.value<="05:00";
-}
+function validSubuh(){ return jamEl.value>="03:00" && jamEl.value<="05:00"; }
 
-/* KIRIM */
-window.kirim = async () => {
-  errorEl.innerText="";
-  noticeEl.style.display="none";
+window.kirim = async ()=>{
+  errorEl.innerText=""; noticeEl.style.display="none";
+  if(!siswaEl.value){ errorEl.innerText="Pilih siswa"; return; }
+  if(!validSubuh()){ noticeEl.innerText="⏰ Hanya 03.00–05.00"; noticeEl.style.display="block"; return; }
 
-  if(!siswaEl.value){
-    errorEl.innerText="Pilih siswa";
-    return;
-  }
-
-  if(!validSubuh()){
-    noticeEl.innerText="⏰ Lapor subuh hanya pukul 03.00 – 05.00";
-    noticeEl.style.display="block";
-    return;
-  }
-
-  const cek = await getDocs(
-    query(
-      collection(db,"lapor_subuh"),
-      where("siswaId","==",siswaEl.value),
-      where("tanggal","==",tanggalEl.value)
-    )
-  );
-  if(!cek.empty){
-    noticeEl.innerText="🙏 Sudah lapor hari ini";
-    noticeEl.style.display="block";
-    return;
-  }
+  const cek = await getDocs(query(collection(db,"lapor_subuh"), where("siswaId","==",siswaEl.value), where("tanggal","==",tanggalEl.value)));
+  if(!cek.empty){ noticeEl.innerText="🙏 Sudah lapor hari ini"; noticeEl.style.display="block"; return; }
 
   await addDoc(collection(db,"lapor_subuh"),{
-    siswaId:siswaEl.value,
-    tanggal:tanggalEl.value,
-    jam:jamEl.value,
-    nilai:5
+    lembagaId: lembagaEl.value,
+    lembagaNama: selectedText(lembagaEl),
+    kelasId: kelasEl.value,
+    kelasNama: selectedText(kelasEl),
+    rombelId: rombelEl.value,
+    rombelNama: selectedText(rombelEl),
+    siswaId: siswaEl.value,
+    nama: selectedText(siswaEl),
+    tanggal: tanggalEl.value,
+    bulan: tanggalEl.value.slice(0,7),
+    jam: jamEl.value,
+    nilai: 5,
+    dibuat: serverTimestamp()
   });
 
   loadHistory();
   alert("✅ Laporan berhasil");
 };
 </script>
-
 </body>
 </html>
