@@ -117,7 +117,7 @@ jamEl.value = now.toTimeString().slice(0,5);
 window.openLogin = ()=> document.getElementById("loginModal").style.display="block";
 window.closeLogin = ()=>{ document.getElementById("loginModal").style.display="none"; document.getElementById("pwdGuru").value=""; document.getElementById("loginStatus").innerText=""; };
 window.loginGuru = ()=>{
-  if(document.getElementById("pwdGuru").value==="12345"){
+  if(document.getElementById("pwdGuru").value==="123"){
     tanggalEl.readOnly=false; jamEl.readOnly=false;
     document.getElementById("loginStatus").innerText="✔ Login berhasil";
     setTimeout(closeLogin,700);
