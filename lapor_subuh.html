@@ -27,6 +27,38 @@ hr { margin:20px 0; }
 </head>
 <body>
 
+<!-- 🔒 GATE LOGIN (LAYAR PUTIH) -->
+<div id="gate" style="
+  position:fixed;
+  inset:0;
+  background:#ffffff;
+  z-index:9999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+">
+  <div style="
+    width:280px;
+    text-align:center;
+    padding:20px;
+    border-radius:10px;
+    box-shadow:0 4px 15px rgba(0,0,0,.15);
+    font-family:Arial;
+  ">
+    <h3>🔐 Akses Sekolah</h3>
+    <input type="text" id="gatePwd" placeholder="Password"
+           style="width:100%;padding:10px;margin-top:10px">
+    <button onclick="loginGate()"
+            style="width:100%;margin-top:12px;
+                   padding:10px;
+                   background:#2e7d32;
+                   color:#fff;border:none;border-radius:6px">
+      Masuk
+    </button>
+    <div id="gateMsg" style="color:#c62828;margin-top:10px"></div>
+  </div>
+</div>
+
 <button class="login-btn" onclick="openLogin()">🔐 Admin</button>
 
 <div id="loginModal" class="modal">
@@ -95,6 +127,14 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
+/* 🔐 PASSWORD → LEMBAGA */
+const GATE_MAP = {
+  "sb": { id: "kVMG9kghdBegwrtjxbuX", nama: "SDN SIDOBANDUNG II" },
+  "ngb": { id: "pPZjdvhS5UeRfGiQ4voy", nama: "SMP NEGERI 1 NGAMBON" },
+  "sbtr": { id: "ybeAemUlVJhPILjcmAw2", nama: "SDN SOBONTORO II" }
+};
+
+
 const lembagaEl = document.getElementById("lembaga");
 const kelasEl = document.getElementById("kelas");
 const rombelEl = document.getElementById("rombel");
@@ -113,6 +153,30 @@ function selectedText(el){
 const now = new Date();
 tanggalEl.value = now.toISOString().split("T")[0];
 jamEl.value = now.toTimeString().slice(0,5);
+
+/* 🔓 LOGIN GATE */
+window.loginGate = () => {
+  const pwd = document.getElementById("gatePwd").value.trim();
+  const msg = document.getElementById("gateMsg");
+
+  if (!GATE_MAP[pwd]) {
+    msg.innerText = "❌ Password salah";
+    return;
+  }
+
+  const l = GATE_MAP[pwd];
+  lembagaEl.innerHTML = `<option value="${l.id}" selected>${l.nama}</option>`;
+  lembagaEl.disabled = true;
+
+  document.getElementById("gate").style.display = "none";
+  lembagaEl.dispatchEvent(new Event("change"));
+};
+
+
+
+
+
+
 
 window.openLogin = ()=> document.getElementById("loginModal").style.display="block";
 window.closeLogin = ()=>{ document.getElementById("loginModal").style.display="none"; document.getElementById("pwdGuru").value=""; document.getElementById("loginStatus").innerText=""; };
