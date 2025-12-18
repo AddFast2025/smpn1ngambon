@@ -151,7 +151,7 @@ function selectedText(el){
 }
 
 const now = new Date();
-tanggalEl.value = now.toISOString().split("T")[0];
+tanggalEl.value = new Date().toLocaleDateString("en-CA");
 jamEl.value = now.toTimeString().slice(0,5);
 
 /* 🔓 LOGIN GATE */
